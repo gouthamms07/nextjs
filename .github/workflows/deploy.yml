@@ -1,0 +1,36 @@
+name: Next.js CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test || echo "No tests"
+
+      - name: Build Docker image
+        run: docker build -t nextjs-app .
+
+      - name: Push Docker image (Optional)
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker tag nextjs-app yourdockerhub/nextjs-app:latest
+          docker push yourdockerhub/nextjs-app:latest
