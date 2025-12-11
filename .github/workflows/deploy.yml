@@ -51,12 +51,13 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
-            # Navigate to project (optional if using Docker)
-            cd /home/nextjs/nextjs-app || mkdir -p /home/nextjs/nextjs-app
-            # Stop & remove existing Docker container
-            docker stop nextjs-app || true
-            docker rm nextjs-app || true
-            # Pull latest Docker image
-            docker pull ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
-            # Run the Docker container
-            docker run -d -p 3000:3000 --name nextjs-app ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
+            echo "Deploying Next.js Docker container..."
+            mkdir -p /home/${{ secrets.SERVER_USER }}/nextjs-app
+            cd /home/${{ secrets.SERVER_USER }}/nextjs-app
+            # Stop & remove previous container
+            sudo docker stop nextjs-app || true
+            sudo docker rm nextjs-app || true
+            # Pull latest image
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
+            # Run container
+            sudo docker run -d -p 3000:3000 --name nextjs-app ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
