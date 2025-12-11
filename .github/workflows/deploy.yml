@@ -52,7 +52,7 @@ jobs:
           port: 22
           script: |
             echo "Deploying Next.js Docker container..."
-            mkdir -p /home/${{ secrets.SERVER_USER }}/nextjs-app
+            sudo mkdir -p /home/${{ secrets.SERVER_USER }}/nextjs-app
             cd /home/${{ secrets.SERVER_USER }}/nextjs-app
             # Stop & remove previous container
             sudo docker stop nextjs-app || true
