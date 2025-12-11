@@ -10,62 +10,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the code
-      - name: Checkout Repository
+      # 1. Checkout the latest code
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js environment
-      - name: Set up Node.js
+      # 2. Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # 3️⃣ Install dependencies
+      # 3. Install dependencies
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      # 4️⃣ Optional: Run tests
-      - name: Run Tests
-        run: npm run test || echo "No tests found"
-
-      # 5️⃣ Build Next.js
-      - name: Build Next.js App
+      # 4. Build Next.js
+      - name: Build Next.js
         run: npm run build
 
-      # 6️⃣ Build Docker image
+      # 5. Build Docker Image
       - name: Build Docker Image
-        run: docker build -t nextjs-app:latest .
+        run: docker build -t nextjs-app .
 
-      # 7️⃣ Login to Docker Hub and push image
-      - name: Push Docker Image to Docker Hub
+      # 6. Login & Push Docker Image to Docker Hub
+      - name: Push Docker Image
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
           docker tag nextjs-app:latest $DOCKER_USERNAME/nextjs-app:latest
           docker push $DOCKER_USERNAME/nextjs-app:latest
 
-      # 8️⃣ Deploy to server via SSH
-      - name: Deploy on Server
+      # 7. Deploy to server via SSH
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # Stop and remove existing container if running
-            if [ $(docker ps -q -f name=nextjs-app) ]; then
-              docker stop nextjs-app
-              docker rm nextjs-app
-            fi
-
-            # Pull latest image
-            docker pull $DOCKER_USERNAME/nextjs-app:latest
-
-            # Run container
-            docker run -d \
-              --restart unless-stopped \
-              -p 3000:3000 \
-              --name nextjs-app \
-              $DOCKER_USERNAME/nextjs-app:latest
+            # Navigate to project (optional if using Docker)
+            cd /home/nextjs/nextjs-app || mkdir -p /home/ubuntu/nextjs-app
+            # Stop & remove existing Docker container
+            docker stop nextjs-app || true
+            docker rm nextjs-app || true
+            # Pull latest Docker image
+            docker pull ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
+            # Run the Docker container
+            docker run -d -p 3000:3000 --name nextjs-app ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
