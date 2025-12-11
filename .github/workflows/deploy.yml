@@ -49,6 +49,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
           script: |
             # Navigate to project (optional if using Docker)
             cd /home/nextjs/nextjs-app || mkdir -p /home/ubuntu/nextjs-app
