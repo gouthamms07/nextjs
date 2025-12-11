@@ -52,7 +52,7 @@ jobs:
           port: 22
           script: |
             # Navigate to project (optional if using Docker)
-            cd /home/nextjs/nextjs-app || mkdir -p /home/ubuntu/nextjs-app
+            cd /home/nextjs/nextjs-app || mkdir -p /home/nextjs/nextjs-app
             # Stop & remove existing Docker container
             docker stop nextjs-app || true
             docker rm nextjs-app || true
