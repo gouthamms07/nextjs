@@ -1,4 +1,4 @@
-name: Next.js CI/CD
+name: Next.js CI/CD Pipeline
 
 on:
   push:
@@ -6,31 +6,47 @@ on:
       - main
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repo
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build
+      - name: Run Tests (Optional)
+        run: npm run test || echo "No tests found"
+
+      - name: Build Next.js
         run: npm run build
 
-      - name: Run tests
-        run: npm run test || echo "No tests"
-
-      - name: Build Docker image
+      - name: Build Docker Image
         run: docker build -t nextjs-app .
 
-      - name: Push Docker image (Optional)
+      - name: Push Docker Image to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker tag nextjs-app yourdockerhub/nextjs-app:latest
-          docker push yourdockerhub/nextjs-app:latest
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          docker tag nextjs-app $DOCKER_USERNAME/nextjs-app:latest
+          docker push $DOCKER_USERNAME/nextjs-app:latest
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            docker pull $DOCKER_USERNAME/nextjs-app:latest
+            docker stop nextjs-app || true
+            docker rm nextjs-app || true
+            docker run -d -p 3000:3000 --name nextjs-app $DOCKER_USERNAME/nextjs-app:latest
